@@ -1,0 +1,455 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>点検AIアシスタント</title>
+<link href="https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --mint:#b8f0d8;--mint-soft:#e4faf2;--mint-deep:#52c4a0;--mint-text:#1a6b52;
+  --pink:#ffd6e7;--pink-soft:#fff0f6;--pink-deep:#f48fb1;--pink-text:#8b3a6b;
+  --cream:#fff8e8;--cream-deep:#ffe8b0;--cream-text:#8b6914;
+  --sky:#d6eeff;--sky-deep:#7ec8f8;--sky-text:#1a5f8a;
+  --lavender:#ede8ff;--lav-deep:#b8a8f8;--lav-text:#4a3a9a;
+  --white:#ffffff;--offwhite:#fafef8;
+  --text:#3d3535;--text-soft:#7a6f6f;
+  --r:22px;--r-sm:16px;--r-xs:12px;
+}
+html,body{height:100%;font-family:'Zen Maru Gothic',sans-serif;background:var(--offwhite);}
+.app{max-width:600px;margin:0 auto;min-height:100vh;display:flex;flex-direction:column;background:var(--offwhite);}
+.screen{display:none;flex-direction:column;min-height:100vh;}
+.screen.active{display:flex;}
+
+/* ===== ログイン ===== */
+.login-wrap{background:linear-gradient(170deg,#fff0f6 0%,#e4faf2 40%,#fff8e8 100%);min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:2rem 1.25rem;}
+.login-deco{display:flex;gap:8px;margin-bottom:1rem;animation:float 3s ease-in-out infinite;}
+@keyframes float{0%,100%{transform:translateY(0);}50%{transform:translateY(-6px);}}
+.login-deco svg{width:48px;height:48px;}
+.login-title{font-size:1.5rem;font-weight:700;color:var(--mint-text);text-align:center;margin-bottom:4px;}
+.login-sub{font-size:0.78rem;color:var(--text-soft);text-align:center;margin-bottom:1.5rem;}
+.login-card{background:var(--white);border-radius:28px;padding:2rem 1.75rem;width:100%;max-width:340px;border:2.5px solid var(--mint);box-shadow:0 8px 0 0 #a8e8cc;}
+.field-label{font-size:0.78rem;font-weight:700;color:var(--mint-text);margin-bottom:5px;display:block;}
+.field-input{width:100%;border:2.5px solid var(--mint);border-radius:var(--r-xs);padding:10px 14px;font-size:0.88rem;font-family:inherit;background:var(--mint-soft);color:var(--text);outline:none;margin-bottom:1rem;transition:border-color .2s;}
+.field-input:focus{border-color:var(--mint-deep);}
+.btn-login{width:100%;background:var(--mint-deep);color:white;border:none;border-radius:var(--r-sm);padding:13px;font-size:1rem;font-weight:700;font-family:inherit;cursor:pointer;box-shadow:0 6px 0 0 #2d9e7a;transition:transform .12s,box-shadow .12s;}
+.btn-login:hover{transform:translateY(-2px);box-shadow:0 8px 0 0 #2d9e7a;}
+.btn-login:active{transform:translateY(4px);box-shadow:0 2px 0 0 #2d9e7a;}
+.role-pills{display:flex;gap:8px;margin-top:1rem;flex-wrap:wrap;justify-content:center;}
+.role-pill{font-size:0.72rem;font-weight:700;font-family:inherit;cursor:pointer;border-radius:20px;padding:5px 13px;border:2px solid;transition:transform .15s;}
+.role-pill:hover{transform:translateY(-2px);}
+.rp-adm{background:var(--lavender);color:var(--lav-text);border-color:var(--lav-deep);}
+.rp-edt{background:var(--sky);color:var(--sky-text);border-color:var(--sky-deep);}
+.rp-usr{background:var(--mint-soft);color:var(--mint-text);border-color:var(--mint);}
+.login-err{color:#c2185b;font-size:0.78rem;text-align:center;margin-bottom:0.75rem;font-weight:700;display:none;}
+.login-animals{display:flex;gap:10px;margin-top:1.5rem;}
+.login-animals svg{width:36px;height:36px;animation:wobble 4s ease-in-out infinite;}
+.login-animals svg:nth-child(2){animation-delay:.5s;}
+.login-animals svg:nth-child(3){animation-delay:1s;}
+.login-animals svg:nth-child(4){animation-delay:1.5s;}
+@keyframes wobble{0%,100%{transform:rotate(-4deg);}50%{transform:rotate(4deg);}}
+
+/* ===== ヘッダー ===== */
+.header{background:linear-gradient(90deg,var(--mint-deep) 0%,#6dd5b0 100%);padding:0.9rem 1rem;display:flex;align-items:center;gap:10px;position:sticky;top:0;z-index:100;}
+.header-mascot{width:38px;height:38px;flex-shrink:0;}
+.header-title{font-size:1rem;font-weight:700;color:white;flex:1;}
+.header-right{display:flex;flex-direction:column;align-items:flex-end;gap:4px;}
+.header-uname{font-size:0.74rem;color:rgba(255,255,255,0.92);}
+.header-role-badge{display:inline-block;background:rgba(255,255,255,0.28);border-radius:20px;padding:2px 9px;font-size:0.68rem;font-weight:700;color:white;}
+.logout-btn{background:rgba(255,255,255,0.22);border:1.5px solid rgba(255,255,255,0.5);border-radius:20px;padding:3px 10px;font-size:0.68rem;font-weight:700;color:white;cursor:pointer;font-family:inherit;transition:background .15s;}
+.logout-btn:hover{background:rgba(255,255,255,0.38);}
+
+/* ===== ログアウト確認 ===== */
+.logout-bar{background:#fff3e0;border-bottom:2px solid #ffc97a;padding:10px 14px;display:none;align-items:center;gap:10px;}
+.logout-bar.show{display:flex;}
+.logout-bar-text{flex:1;font-size:0.8rem;font-weight:700;color:#a05000;}
+.btn-lno{background:white;color:var(--text-soft);border:2px solid #e0dcd0;border-radius:var(--r-xs);padding:5px 14px;font-size:0.76rem;font-weight:700;cursor:pointer;font-family:inherit;}
+.btn-lyes{background:#f06c00;color:white;border:none;border-radius:var(--r-xs);padding:5px 14px;font-size:0.76rem;font-weight:700;cursor:pointer;font-family:inherit;box-shadow:0 3px 0 0 #b84f00;}
+
+/* ===== ナビ ===== */
+.nav{display:flex;background:var(--white);border-bottom:3px solid var(--mint-soft);padding:0 4px;position:sticky;top:62px;z-index:99;}
+.nav-btn{flex:1;padding:10px 4px 8px;font-size:0.74rem;font-weight:700;font-family:inherit;border:none;background:none;cursor:pointer;color:var(--text-soft);border-bottom:3px solid transparent;margin-bottom:-3px;white-space:nowrap;transition:color .15s;}
+.nav-btn.active{color:var(--mint-text);border-bottom-color:var(--mint-deep);}
+.nav-icon{font-size:18px;display:block;margin-bottom:2px;}
+
+/* ===== コンテンツ ===== */
+.content{flex:1;padding:1rem;background:var(--offwhite);}
+
+/* ===== 免責 ===== */
+.disclaimer{background:#fffbea;border:2px solid var(--cream-deep);border-radius:var(--r-sm);padding:9px 13px;font-size:0.74rem;color:var(--cream-text);margin-bottom:1rem;display:flex;align-items:flex-start;gap:7px;}
+
+/* ===== チャット ===== */
+.chat-messages{display:flex;flex-direction:column;gap:14px;padding-bottom:1rem;}
+.msg{display:flex;gap:8px;align-items:flex-end;}
+.msg.user{flex-direction:row-reverse;}
+.msg-ava{width:38px;height:38px;border-radius:50%;flex-shrink:0;}
+.msg-ava svg{width:38px;height:38px;}
+.bubble{border-radius:20px;padding:11px 15px;font-size:0.84rem;line-height:1.7;max-width:80%;}
+.bubble.ai{background:var(--white);border:2.5px solid var(--mint);color:var(--text);border-bottom-left-radius:5px;box-shadow:0 3px 0 0 var(--mint);}
+.bubble.user{background:var(--mint-deep);color:white;border-bottom-right-radius:5px;box-shadow:0 3px 0 0 #2d9e7a;}
+.msg-time{font-size:0.62rem;color:var(--text-soft);align-self:flex-end;margin-bottom:3px;white-space:nowrap;}
+.src-badge{display:inline-block;border-radius:20px;padding:3px 10px;font-size:0.68rem;font-weight:700;margin:5px 3px 0 0;background:var(--sky);color:var(--sky-text);border:1.5px solid var(--sky-deep);}
+.src-badge.old{background:var(--cream);color:var(--cream-text);border-color:var(--cream-deep);}
+.src-badge.none{background:#f5f5f5;color:#888;border-color:#ddd;}
+.typing-wrap{padding:0 0 10px 46px;}
+.typing{display:flex;gap:5px;align-items:center;}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--mint-deep);animation:typ 1.2s infinite;}
+.dot:nth-child(2){animation-delay:.2s;}
+.dot:nth-child(3){animation-delay:.4s;}
+@keyframes typ{0%,100%{opacity:.25;transform:translateY(0);}50%{opacity:1;transform:translateY(-5px);}}
+.chat-input-row{background:var(--white);border-top:2.5px solid var(--mint-soft);padding:10px 12px;display:flex;gap:8px;align-items:flex-end;position:sticky;bottom:0;}
+.chat-textarea{flex:1;border:2.5px solid var(--mint);border-radius:20px;padding:10px 16px;font-size:0.84rem;font-family:inherit;resize:none;outline:none;background:var(--mint-soft);color:var(--text);min-height:44px;transition:border-color .2s,background .2s;}
+.chat-textarea:focus{border-color:var(--mint-deep);background:white;}
+.chat-send{width:46px;height:46px;border-radius:50%;background:var(--mint-deep);border:none;cursor:pointer;color:white;font-size:18px;flex-shrink:0;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 0 0 #2d9e7a;transition:transform .12s,box-shadow .12s;}
+.chat-send:hover{transform:translateY(-2px);box-shadow:0 6px 0 0 #2d9e7a;}
+.chat-send:active{transform:translateY(3px);box-shadow:0 1px 0 0 #2d9e7a;}
+
+/* ===== PDF管理 ===== */
+.sec-title{font-size:0.88rem;font-weight:700;color:var(--mint-text);margin-bottom:0.75rem;}
+.toast{background:var(--mint-deep);color:white;border-radius:var(--r-sm);padding:10px 15px;font-size:0.8rem;font-weight:700;margin-bottom:1rem;display:none;align-items:center;gap:8px;box-shadow:0 3px 0 0 #2d9e7a;}
+.toast.show{display:flex;}
+.pdf-card{background:var(--white);border:2.5px solid var(--mint);border-radius:var(--r);padding:12px 14px;margin-bottom:10px;display:flex;align-items:center;gap:10px;box-shadow:0 4px 0 0 var(--mint);transition:transform .15s;}
+.pdf-card:hover{transform:translateY(-2px);}
+.pdf-card.old-ver{border-color:var(--cream-deep);box-shadow:0 4px 0 0 var(--cream-deep);}
+.pdf-info{flex:1;}
+.pdf-name{font-size:0.84rem;font-weight:700;color:var(--text);}
+.pdf-meta{font-size:0.7rem;color:var(--text-soft);margin-top:2px;}
+.ver-tag{display:inline-block;border-radius:20px;padding:2px 9px;font-size:0.68rem;font-weight:700;}
+.ver-new{background:var(--mint-soft);color:var(--mint-text);border:1.5px solid var(--mint);}
+.ver-old{background:var(--cream);color:var(--cream-text);border:1.5px solid var(--cream-deep);}
+.btn-del{background:var(--pink-soft);color:var(--pink-text);border:2px solid var(--pink);border-radius:var(--r-xs);padding:5px 10px;font-size:0.72rem;font-weight:700;cursor:pointer;font-family:inherit;box-shadow:0 3px 0 0 var(--pink-deep);transition:transform .12s,box-shadow .12s;}
+.btn-del:hover{transform:translateY(-2px);box-shadow:0 5px 0 0 var(--pink-deep);}
+.btn-del:active{transform:translateY(2px);box-shadow:0 1px 0 0 var(--pink-deep);}
+.drop-zone{border:3px dashed var(--mint);border-radius:var(--r);padding:2rem 1rem;text-align:center;margin-top:1rem;background:var(--mint-soft);cursor:pointer;transition:background .2s,border-color .2s,transform .15s;}
+.drop-zone:hover{transform:translateY(-2px);}
+.drop-zone.over{background:var(--mint);border-color:var(--mint-deep);}
+.drop-illo svg{width:60px;height:60px;margin-bottom:10px;}
+.drop-text{font-size:0.8rem;color:var(--mint-text);font-weight:700;margin-bottom:6px;}
+.drop-sub{font-size:0.72rem;color:var(--text-soft);}
+.btn-file{display:inline-block;margin-top:10px;background:var(--mint-deep);color:white;border-radius:var(--r-sm);padding:8px 20px;font-size:0.8rem;font-weight:700;cursor:pointer;font-family:inherit;border:none;box-shadow:0 3px 0 0 #2d9e7a;transition:transform .12s,box-shadow .12s;}
+.btn-file:hover{transform:translateY(-2px);box-shadow:0 5px 0 0 #2d9e7a;}
+.file-input{display:none;}
+.no-perm{background:var(--cream);border:2px solid var(--cream-deep);border-radius:var(--r-sm);padding:10px 14px;font-size:0.78rem;color:var(--cream-text);font-weight:700;margin-top:1rem;display:none;}
+
+/* ===== 管理者設定 ===== */
+.setting-block{background:var(--white);border:2.5px solid var(--lavender);border-radius:var(--r);padding:1.25rem;margin-bottom:1rem;box-shadow:0 4px 0 0 var(--lav-deep);}
+.setting-block label{font-size:0.78rem;font-weight:700;color:var(--lav-text);display:block;margin-bottom:5px;}
+.setting-input{width:100%;border:2.5px solid var(--lavender);border-radius:var(--r-xs);padding:9px 13px;font-size:0.84rem;font-family:inherit;outline:none;background:var(--lavender);color:var(--text);margin-bottom:10px;transition:border-color .2s;}
+.setting-input:focus{border-color:var(--lav-deep);}
+.setting-sel{width:100%;border:2.5px solid var(--lavender);border-radius:var(--r-xs);padding:9px 13px;font-size:0.84rem;font-family:inherit;outline:none;background:var(--lavender);color:var(--text);margin-bottom:10px;}
+.btn-save{background:var(--lav-deep);color:var(--lav-text);border:none;border-radius:var(--r-sm);padding:9px 22px;font-size:0.84rem;font-weight:700;font-family:inherit;cursor:pointer;box-shadow:0 3px 0 0 #8070d8;transition:transform .12s,box-shadow .12s;}
+.btn-save:hover{transform:translateY(-2px);box-shadow:0 5px 0 0 #8070d8;}
+.user-row{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:2px dashed var(--lavender);}
+.user-ava{width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:18px;background:var(--lavender);}
+.user-nm{flex:1;font-size:0.84rem;font-weight:700;color:var(--text);}
+.user-sub{font-size:0.7rem;font-weight:400;color:var(--text-soft);}
+.rbadge{border-radius:20px;padding:3px 10px;font-size:0.68rem;font-weight:700;}
+.r-adm{background:#fce4ec;color:#880e4f;}
+.r-edt{background:var(--sky);color:var(--sky-text);}
+.r-usr{background:var(--mint-soft);color:var(--mint-text);}
+
+/* ===== 操作ガイド ===== */
+.guide-hero{background:linear-gradient(135deg,var(--mint-soft) 0%,var(--lavender) 100%);border-radius:var(--r);padding:1.5rem;margin-bottom:1rem;text-align:center;border:2.5px solid var(--mint);}
+.guide-hero-title{font-size:1.1rem;font-weight:700;color:var(--mint-text);margin-bottom:0.3rem;}
+.guide-hero-sub{font-size:0.78rem;color:var(--text-soft);}
+.guide-section{background:var(--white);border:2.5px solid var(--mint);border-radius:var(--r);padding:1.25rem;margin-bottom:1rem;box-shadow:0 4px 0 0 var(--mint);}
+.guide-section.pink{border-color:var(--pink);box-shadow:0 4px 0 0 var(--pink-deep);}
+.guide-section.lav{border-color:var(--lav-deep);box-shadow:0 4px 0 0 var(--lav-deep);}
+.guide-section.sky{border-color:var(--sky-deep);box-shadow:0 4px 0 0 var(--sky-deep);}
+.guide-section-title{font-size:0.92rem;font-weight:700;color:var(--mint-text);margin-bottom:0.75rem;display:flex;align-items:center;gap:6px;}
+.guide-section.pink .guide-section-title{color:var(--pink-text);}
+.guide-section.lav .guide-section-title{color:var(--lav-text);}
+.guide-section.sky .guide-section-title{color:var(--sky-text);}
+.guide-step{display:flex;gap:10px;margin-bottom:10px;align-items:flex-start;}
+.guide-step-num{width:28px;height:28px;border-radius:50%;background:var(--mint-deep);color:white;font-size:0.78rem;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px;}
+.guide-section.pink .guide-step-num{background:var(--pink-deep);}
+.guide-section.lav .guide-step-num{background:var(--lav-deep);}
+.guide-section.sky .guide-step-num{background:var(--sky-deep);}
+.guide-step-text{flex:1;font-size:0.82rem;color:var(--text);line-height:1.6;}
+.guide-step-text strong{color:var(--mint-text);font-weight:700;}
+.guide-tip{background:var(--cream);border:2px solid var(--cream-deep);border-radius:var(--r-xs);padding:8px 12px;font-size:0.76rem;color:var(--cream-text);margin-top:0.5rem;}
+.role-table{width:100%;border-collapse:collapse;font-size:0.78rem;margin-top:0.5rem;}
+.role-table th{background:var(--mint-soft);color:var(--mint-text);padding:7px 10px;text-align:left;font-weight:700;}
+.role-table td{padding:7px 10px;border-bottom:1.5px dashed var(--mint);color:var(--text);}
+.role-table tr:last-child td{border-bottom:none;}
+</style>
+</head>
+<body>
+<div class="app">
+
+<!-- ===== ログイン ===== -->
+<div id="scr-login" class="screen active">
+<div class="login-wrap">
+  <div class="login-deco">
+    <svg viewBox="0 0 48 48"><circle cx="24" cy="24" r="22" fill="#b8f0d8"/><circle cx="16" cy="20" r="5" fill="#52c4a0"/><circle cx="32" cy="20" r="5" fill="#52c4a0"/><ellipse cx="24" cy="30" rx="7" ry="5" fill="#52c4a0"/><circle cx="14" cy="9" r="6" fill="#b8f0d8" stroke="#52c4a0" stroke-width="2.5"/><circle cx="34" cy="9" r="6" fill="#b8f0d8" stroke="#52c4a0" stroke-width="2.5"/><circle cx="21" cy="28" r="1.5" fill="white"/><circle cx="27" cy="28" r="1.5" fill="white"/></svg>
+  </div>
+  <div class="login-title">点検AIアシスタント</div>
+  <div class="login-sub">🌿 橋梁・トンネル・付属物点検支援システム</div>
+  <div class="login-card">
+    <div class="login-err" id="login-err">⚠️ ユーザー名またはパスワードが違います</div>
+    <label class="field-label">ユーザー名</label>
+    <input class="field-input" type="text" id="l-user" value="admin" placeholder="ユーザー名">
+    <label class="field-label">パスワード</label>
+    <input class="field-input" type="password" id="l-pass" value="admin123" placeholder="パスワード">
+    <button class="btn-login" onclick="doLogin()">🐾 ログインする</button>
+    <div class="role-pills">
+      <button class="role-pill rp-adm" onclick="sr('admin','admin123')">👑 管理者</button>
+      <button class="role-pill rp-edt" onclick="sr('editor','edit123')">✏️ 編集者</button>
+      <button class="role-pill rp-usr" onclick="sr('staff','staff123')">👷 一般</button>
+    </div>
+  </div>
+  <div class="login-animals">
+    <svg viewBox="0 0 36 36"><circle cx="18" cy="18" r="16" fill="#ffd6e7"/><circle cx="12" cy="16" r="3.5" fill="#f48fb1"/><circle cx="24" cy="16" r="3.5" fill="#f48fb1"/><ellipse cx="18" cy="22" rx="5" ry="3.5" fill="#f48fb1"/><circle cx="11" cy="8" r="4" fill="#ffd6e7" stroke="#f48fb1" stroke-width="2"/><circle cx="25" cy="8" r="4" fill="#ffd6e7" stroke="#f48fb1" stroke-width="2"/></svg>
+    <svg viewBox="0 0 36 36"><circle cx="18" cy="18" r="16" fill="#d6eeff"/><circle cx="12" cy="16" r="3.5" fill="#7ec8f8"/><circle cx="24" cy="16" r="3.5" fill="#7ec8f8"/><ellipse cx="18" cy="23" rx="5" ry="3" fill="#7ec8f8"/><circle cx="11" cy="9" r="4" fill="#d6eeff" stroke="#7ec8f8" stroke-width="2"/><circle cx="25" cy="9" r="4" fill="#d6eeff" stroke="#7ec8f8" stroke-width="2"/></svg>
+    <svg viewBox="0 0 36 36"><circle cx="18" cy="18" r="16" fill="#ede8ff"/><circle cx="12" cy="16" r="3.5" fill="#b8a8f8"/><circle cx="24" cy="16" r="3.5" fill="#b8a8f8"/><ellipse cx="18" cy="23" rx="5" ry="3" fill="#b8a8f8"/><circle cx="16" cy="20" r="1" fill="white"/><circle cx="20" cy="20" r="1" fill="white"/></svg>
+    <svg viewBox="0 0 36 36"><circle cx="18" cy="18" r="16" fill="#b8f0d8"/><circle cx="12" cy="16" r="3.5" fill="#52c4a0"/><circle cx="24" cy="16" r="3.5" fill="#52c4a0"/><ellipse cx="18" cy="23" rx="5" ry="3" fill="#52c4a0"/><circle cx="11" cy="9" r="4" fill="#b8f0d8" stroke="#52c4a0" stroke-width="2"/><circle cx="25" cy="9" r="4" fill="#b8f0d8" stroke="#52c4a0" stroke-width="2"/></svg>
+  </div>
+</div>
+</div>
+
+<!-- ===== メイン ===== -->
+<div id="scr-main" class="screen">
+  <div class="header">
+    <svg class="header-mascot" viewBox="0 0 38 38"><circle cx="19" cy="19" r="17" fill="#e4faf2"/><circle cx="13" cy="17" r="4" fill="#52c4a0"/><circle cx="25" cy="17" r="4" fill="#52c4a0"/><ellipse cx="19" cy="24" rx="5.5" ry="3.5" fill="#52c4a0"/><circle cx="12" cy="8" r="4.5" fill="#e4faf2" stroke="#52c4a0" stroke-width="2"/><circle cx="26" cy="8" r="4.5" fill="#e4faf2" stroke="#52c4a0" stroke-width="2"/></svg>
+    <div class="header-title">点検AIアシスタント</div>
+    <div class="header-right">
+      <div class="header-uname" id="hd-name">管理者さん</div>
+      <div style="display:flex;gap:5px;align-items:center;">
+        <span class="header-role-badge" id="hd-role">管理者</span>
+        <button class="logout-btn" onclick="showLogout()">🚪 ログアウト</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="logout-bar" id="logout-bar">
+    <div class="logout-bar-text">🚪 ログアウトしますか？</div>
+    <button class="btn-lno" onclick="hideLogout()">キャンセル</button>
+    <button class="btn-lyes" onclick="doLogout()">ログアウト</button>
+  </div>
+
+  <div class="nav" id="main-nav"></div>
+
+  <!-- チャット -->
+  <div id="tab-chat" class="content" style="display:flex;flex-direction:column;padding-bottom:0;">
+    <div class="disclaimer"><span style="font-size:16px;flex-shrink:0;">⚠️</span><span>この回答はあくまで参考です。最終判断は必ず原文の要領・基準書を確認し、有資格者が行ってください。</span></div>
+    <div class="chat-messages" id="chat-msgs"></div>
+    <div id="typing" style="display:none;" class="typing-wrap"><div class="typing"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div></div>
+    <div class="chat-input-row">
+      <textarea class="chat-textarea" id="chat-in" placeholder="メッセージを入力..." rows="1" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendMsg();}"></textarea>
+      <button class="chat-send" onclick="sendMsg()">➤</button>
+    </div>
+  </div>
+
+  <!-- PDF管理 -->
+  <div id="tab-pdf" class="content" style="display:none;">
+    <div class="toast" id="toast-pdf"></div>
+    <div class="sec-title">📚 登録済みの要領</div>
+    <div id="pdf-list">
+      <div class="pdf-card"><svg width="38" height="38" viewBox="0 0 38 38" style="flex-shrink:0"><rect x="4" y="2" width="22" height="30" rx="4" fill="#e4faf2" stroke="#52c4a0" stroke-width="2"/><rect x="8" y="8" width="14" height="2.5" rx="1.25" fill="#52c4a0"/><rect x="8" y="13" width="14" height="2.5" rx="1.25" fill="#52c4a0"/><rect x="8" y="18" width="10" height="2.5" rx="1.25" fill="#52c4a0"/><rect x="18" y="22" width="16" height="14" rx="4" fill="#b8f0d8" stroke="#52c4a0" stroke-width="1.5"/><text x="26" y="33" font-size="9" text-anchor="middle" fill="#1a6b52" font-weight="bold">NEW</text></svg><div class="pdf-info"><div class="pdf-name">道路橋定期点検要領（令和6年版）</div><div class="pdf-meta">登録日：2024年4月1日　<span class="ver-tag ver-new">最新版</span></div></div><button class="btn-del" onclick="delPdf(this)">🗑️ 削除</button></div>
+      <div class="pdf-card old-ver"><svg width="38" height="38" viewBox="0 0 38 38" style="flex-shrink:0"><rect x="4" y="2" width="22" height="30" rx="4" fill="#fff8e8" stroke="#ffe8b0" stroke-width="2"/><rect x="8" y="8" width="14" height="2.5" rx="1.25" fill="#ffe8b0"/><rect x="8" y="13" width="14" height="2.5" rx="1.25" fill="#ffe8b0"/><rect x="8" y="18" width="10" height="2.5" rx="1.25" fill="#ffe8b0"/><rect x="18" y="22" width="16" height="14" rx="4" fill="#fff8e8" stroke="#ffe8b0" stroke-width="1.5"/><text x="26" y="33" font-size="7" text-anchor="middle" fill="#8b6914" font-weight="bold">OLD</text></svg><div class="pdf-info"><div class="pdf-name">道路橋定期点検要領（平成31年版）</div><div class="pdf-meta">登録日：2023年1月15日　<span class="ver-tag ver-old">旧版</span></div></div><button class="btn-del" onclick="delPdf(this)">🗑️ 削除</button></div>
+      <div class="pdf-card"><svg width="38" height="38" viewBox="0 0 38 38" style="flex-shrink:0"><rect x="4" y="2" width="22" height="30" rx="4" fill="#e4faf2" stroke="#52c4a0" stroke-width="2"/><rect x="8" y="8" width="14" height="2.5" rx="1.25" fill="#52c4a0"/><rect x="8" y="13" width="14" height="2.5" rx="1.25" fill="#52c4a0"/><rect x="8" y="18" width="10" height="2.5" rx="1.25" fill="#52c4a0"/><rect x="18" y="22" width="16" height="14" rx="4" fill="#b8f0d8" stroke="#52c4a0" stroke-width="1.5"/><text x="26" y="33" font-size="9" text-anchor="middle" fill="#1a6b52" font-weight="bold">NEW</text></svg><div class="pdf-info"><div class="pdf-name">トンネル定期点検要領（令和3年版）</div><div class="pdf-meta">登録日：2024年4月1日　<span class="ver-tag ver-new">最新版</span></div></div><button class="btn-del" onclick="delPdf(this)">🗑️ 削除</button></div>
+    </div>
+    <div class="no-perm" id="no-perm">🐾 PDFの追加・削除は管理者または編集者のみできます</div>
+    <div class="drop-zone" id="drop-zone" ondragover="onDragOver(event)" ondragleave="onDragLeave(event)" ondrop="onDrop(event)" onclick="document.getElementById('file-in').click()">
+      <div class="drop-illo"><svg viewBox="0 0 60 60"><circle cx="30" cy="30" r="27" fill="#e4faf2"/><circle cx="22" cy="27" r="5" fill="#52c4a0"/><circle cx="38" cy="27" r="5" fill="#52c4a0"/><ellipse cx="30" cy="36" rx="7" ry="5" fill="#52c4a0"/><circle cx="20" cy="14" r="5.5" fill="#e4faf2" stroke="#52c4a0" stroke-width="2.5"/><circle cx="40" cy="14" r="5.5" fill="#e4faf2" stroke="#52c4a0" stroke-width="2.5"/><circle cx="27" cy="34" r="1.5" fill="white"/><circle cx="33" cy="34" r="1.5" fill="white"/></svg></div>
+      <div class="drop-text">ここにPDFをドラッグ＆ドロップ</div>
+      <div class="drop-sub">またはクリックしてファイルを選択</div>
+      <button class="btn-file" onclick="event.stopPropagation();document.getElementById('file-in').click()">📤 ファイルを選ぶ</button>
+      <input type="file" class="file-input" id="file-in" accept=".pdf" multiple onchange="handleFiles(this.files)">
+    </div>
+  </div>
+
+  <!-- 管理者設定 -->
+  <div id="tab-admin" class="content" style="display:none;">
+    <div class="toast" id="toast-adm"></div>
+    <div class="sec-title">🔑 Claude APIキー設定</div>
+    <div class="setting-block">
+      <label>APIキー（取得後にここに入力）</label>
+      <input class="setting-input" type="password" placeholder="sk-ant-...">
+      <div style="font-size:0.76rem;color:var(--text-soft);margin-bottom:10px;">👉 <a href="https://console.anthropic.com" style="color:var(--lav-text);font-weight:700;" target="_blank">console.anthropic.com</a> で取得できます</div>
+      <button class="btn-save" onclick="showToast('adm','✅ APIキーを保存しました！')">💾 保存する</button>
+    </div>
+    <div class="sec-title" style="margin-top:1rem;">👥 ユーザー管理</div>
+    <div class="setting-block">
+      <div class="user-row"><div class="user-ava">👑</div><div class="user-nm">管理者 <span class="user-sub">admin</span></div><span class="rbadge r-adm">管理者</span></div>
+      <div class="user-row"><div class="user-ava">✏️</div><div class="user-nm">編集者A <span class="user-sub">editor_a</span></div><span class="rbadge r-edt">編集者</span></div>
+      <div class="user-row" style="border:none;"><div class="user-ava">👷</div><div class="user-nm">現場スタッフ <span class="user-sub">staff01</span></div><span class="rbadge r-usr">一般</span></div>
+    </div>
+    <div class="sec-title">➕ 新しいユーザーを追加</div>
+    <div class="setting-block">
+      <label>ユーザー名（ログインID）</label><input class="setting-input" type="text" placeholder="例：tanaka_taro">
+      <label>表示名</label><input class="setting-input" type="text" placeholder="例：田中 太郎">
+      <label>パスワード</label><input class="setting-input" type="password" placeholder="パスワードを設定">
+      <label>権限</label>
+      <select class="setting-sel"><option value="user">👷 一般（チャットのみ）</option><option value="editor">✏️ 編集者（PDF追加も可）</option><option value="admin">👑 管理者（全機能）</option></select>
+      <button class="btn-save" onclick="showToast('adm','✅ ユーザーを追加しました！')">➕ ユーザーを追加</button>
+    </div>
+  </div>
+
+  <!-- 操作ガイド -->
+  <div id="tab-guide" class="content" style="display:none;">
+    <div class="guide-hero">
+      <div style="font-size:36px;margin-bottom:8px;">🐻</div>
+      <div class="guide-hero-title">操作ガイド</div>
+      <div class="guide-hero-sub">点検AIアシスタントの使い方をやさしく説明します</div>
+    </div>
+
+    <div class="guide-section">
+      <div class="guide-section-title">💬 AIチャットの使い方</div>
+      <div class="guide-step"><div class="guide-step-num">1</div><div class="guide-step-text">画面下の入力欄に<strong>点検に関する質問</strong>を入力してください<br><span style="font-size:0.74rem;color:var(--text-soft);">例：「RC床版のひびわれ判定基準を教えて」</span></div></div>
+      <div class="guide-step"><div class="guide-step-num">2</div><div class="guide-step-text"><strong>➤ ボタン</strong>を押すか、<strong>Enterキー</strong>で送信します</div></div>
+      <div class="guide-step"><div class="guide-step-num">3</div><div class="guide-step-text">AIが登録済みの<strong>点検要領を参照</strong>して回答します<br>回答の下に<strong>出典（参照元の要領名）</strong>が表示されます</div></div>
+      <div class="guide-tip">⚠️ 回答はあくまで参考です。最終判断は必ず原文の要領で確認してください</div>
+    </div>
+
+    <div class="guide-section sky">
+      <div class="guide-section-title">📋 回答の見方</div>
+      <div class="guide-step"><div class="guide-step-num" style="background:var(--sky-deep);">1</div><div class="guide-step-text"><strong style="color:var(--sky-text);">青いバッジ</strong>（例：道路橋定期点検要領 R6版）→ 最新の要領を参照しています</div></div>
+      <div class="guide-step"><div class="guide-step-num" style="background:var(--sky-deep);">2</div><div class="guide-step-text"><strong style="color:#e65100;">⚠️旧版と表示</strong>されている場合 → 古い要領を参照しています。内容が変わっている可能性があります</div></div>
+      <div class="guide-step"><div class="guide-step-num" style="background:var(--sky-deep);">3</div><div class="guide-step-text"><strong style="color:#888;">「要領外（一般知識）」</strong>と表示されている場合 → 登録された要領に記載がないため、一般知識で回答しています</div></div>
+    </div>
+
+    <div class="guide-section pink">
+      <div class="guide-section-title">📁 PDF管理の使い方（編集者・管理者のみ）</div>
+      <div class="guide-step"><div class="guide-step-num" style="background:var(--pink-deep);">1</div><div class="guide-step-text">「PDF管理」タブを開きます</div></div>
+      <div class="guide-step"><div class="guide-step-num" style="background:var(--pink-deep);">2</div><div class="guide-step-text">PDFファイルを<strong>ドラッグ＆ドロップ</strong>するか、「ファイルを選ぶ」ボタンで追加します</div></div>
+      <div class="guide-step"><div class="guide-step-num" style="background:var(--pink-deep);">3</div><div class="guide-step-text">🟢<strong>最新版</strong>と🟡<strong>旧版</strong>が自動的に色分けされて表示されます</div></div>
+      <div class="guide-step"><div class="guide-step-num" style="background:var(--pink-deep);">4</div><div class="guide-step-text">不要なPDFは<strong>「🗑️ 削除」</strong>ボタンで削除できます</div></div>
+      <div class="guide-tip">🐾 PDF追加・削除は「編集者」以上の権限が必要です</div>
+    </div>
+
+    <div class="guide-section lav">
+      <div class="guide-section-title">👥 権限の種類</div>
+      <table class="role-table">
+        <tr><th>権限</th><th>できること</th></tr>
+        <tr><td>👑 管理者</td><td>全機能＋ユーザー管理＋APIキー設定</td></tr>
+        <tr><td>✏️ 編集者</td><td>チャット＋PDF追加・削除</td></tr>
+        <tr><td>👷 一般</td><td>AIチャットのみ</td></tr>
+      </table>
+    </div>
+
+    <div class="guide-section">
+      <div class="guide-section-title">❓ よくある質問</div>
+      <div class="guide-step"><div class="guide-step-num">Q</div><div class="guide-step-text"><strong>スマホでも使えますか？</strong><br>はい、ブラウザでURLを開くだけで使えます</div></div>
+      <div class="guide-step"><div class="guide-step-num">Q</div><div class="guide-step-text"><strong>AIの回答が間違っていたら？</strong><br>必ず原文の要領で確認してください。AIは参考情報を提供するツールです</div></div>
+      <div class="guide-step"><div class="guide-step-num">Q</div><div class="guide-step-text"><strong>パスワードを忘れたら？</strong><br>管理者に連絡してリセットしてもらってください</div></div>
+    </div>
+  </div>
+
+</div>
+</div>
+
+<script>
+var role='';
+var users={admin:{name:'管理者',role:'admin',lbl:'管理者'},editor:{name:'編集者A',role:'editor',lbl:'編集者'},staff:{name:'現場スタッフ',role:'user',lbl:'一般'}};
+var passes={admin:'admin123',editor:'edit123',staff:'staff123'};
+var replies=[
+  {q:'RC',a:'道路橋定期点検要領（R6版）を参照しました。\n\nRC床版のひびわれ判定区分：\n\n■ 区分Ⅰ（健全）\nひびわれが認められない、または軽微なもの\n\n■ 区分Ⅱ（予防保全段階）\nひびわれ幅0.2mm未満で分布するもの\n\n■ 区分Ⅲ（早期措置段階）\nひびわれ幅0.2mm以上、または格子状のひびわれ\n\n■ 区分Ⅳ（緊急措置段階）\n著しいひびわれや抜け落ちのおそれがあるもの',src:[{l:'道路橋定期点検要領 R6版 第4章',t:'new'}]},
+  {q:'トンネル',a:'トンネル定期点検要領（R3版）を参照しました。\n\n点検周期：\n\n■ 近接目視点検\n5年に1回以上（道路法施行規則に基づく）\n\n■ 日常点検\n道路管理者が定める頻度\n\n初回点検は供用後2年以内に実施が義務です。',src:[{l:'トンネル定期点検要領 R3版 第2章',t:'new'}]},
+  {q:'',a:'アップロードされた要領には該当する記載が見当たりませんでした。\n\n⚠️ 要領外のため、一般的な技術知識に基づいてお答えします。\n\n橋梁点検における損傷評価は、損傷の種類・程度・範囲を総合的に判断します。詳細は最新の要領原文をご確認ください。',src:[{l:'要領外（一般知識）',t:'none'}]}
+];
+
+function tn(){var d=new Date();return d.getHours()+':'+(d.getMinutes()<10?'0':'')+d.getMinutes();}
+function esc(t){return t.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+function sr(u,p){document.getElementById('l-user').value=u;document.getElementById('l-pass').value=p;}
+
+function buildNav(){
+  var n=document.getElementById('main-nav');
+  var tabs=[{id:'chat',ic:'💬',lb:'AIチャット'},{id:'pdf',ic:'📁',lb:'PDF管理'},{id:'guide',ic:'📖',lb:'操作ガイド'}];
+  if(role==='admin')tabs.splice(2,0,{id:'admin',ic:'⚙️',lb:'管理設定'});
+  n.innerHTML='';
+  tabs.forEach(function(t,i){
+    var b=document.createElement('button');
+    b.className='nav-btn'+(i===0?' active':'');
+    b.innerHTML='<span class="nav-icon">'+t.ic+'</span>'+t.lb;
+    b.onclick=function(){sw(t.id,b);};
+    n.appendChild(b);
+  });
+}
+
+function buildChat(){
+  var m=document.getElementById('chat-msgs');m.innerHTML='';
+  var d=document.createElement('div');d.className='msg';
+  d.innerHTML='<div class="msg-ava"><svg viewBox="0 0 38 38"><circle cx="19" cy="19" r="17" fill="#e4faf2"/><circle cx="13" cy="17" r="4" fill="#52c4a0"/><circle cx="25" cy="17" r="4" fill="#52c4a0"/><ellipse cx="19" cy="24" rx="5.5" ry="3.5" fill="#52c4a0"/><circle cx="12" cy="8" r="4.5" fill="#e4faf2" stroke="#52c4a0" stroke-width="2"/><circle cx="26" cy="8" r="4.5" fill="#e4faf2" stroke="#52c4a0" stroke-width="2"/></svg></div><div class="bubble ai">こんにちは！点検AIアシスタントです🌿<br>橋梁・トンネル・付属物点検について何でも聞いてね！<br><br><span class="src-badge">道路橋定期点検要領 R6版</span><span class="src-badge">トンネル定期点検要領 R3版</span></div><div class="msg-time">'+tn()+'</div>';
+  m.appendChild(d);
+}
+
+function doLogin(){
+  var u=document.getElementById('l-user').value.trim(),p=document.getElementById('l-pass').value;
+  var err=document.getElementById('login-err');
+  if(users[u]&&passes[u]===p){
+    role=users[u].role;
+    document.getElementById('hd-name').textContent=users[u].name+'さん';
+    document.getElementById('hd-role').textContent=users[u].lbl;
+    buildNav();buildChat();
+    var ed=(role==='admin'||role==='editor');
+    document.getElementById('drop-zone').style.display=ed?'':'none';
+    document.getElementById('no-perm').style.display=ed?'none':'block';
+    document.querySelectorAll('.btn-del').forEach(function(b){b.style.display=ed?'':'none';});
+    document.getElementById('scr-login').classList.remove('active');
+    document.getElementById('scr-main').classList.add('active');
+    err.style.display='none';
+    sw('chat',document.querySelector('.nav-btn'));
+  } else {err.style.display='block';}
+}
+
+function showLogout(){document.getElementById('logout-bar').classList.add('show');}
+function hideLogout(){document.getElementById('logout-bar').classList.remove('show');}
+function doLogout(){
+  hideLogout();role='';
+  document.getElementById('scr-main').classList.remove('active');
+  document.getElementById('scr-login').classList.add('active');
+  document.getElementById('l-pass').value='';
+}
+
+function sw(tab,btn){
+  ['chat','pdf','admin','guide'].forEach(function(t){
+    var e=document.getElementById('tab-'+t);
+    if(e)e.style.display=t===tab?(t==='chat'?'flex':'block'):'none';
+  });
+  document.querySelectorAll('.nav-btn').forEach(function(b){b.classList.remove('active');});
+  if(btn)btn.classList.add('active');
+  hideLogout();
+}
+
+function sendMsg(){
+  var inp=document.getElementById('chat-in'),text=inp.value.trim();
+  if(!text)return;
+  var m=document.getElementById('chat-msgs');
+  var ud=document.createElement('div');ud.className='msg user';
+  ud.innerHTML='<div class="msg-time">'+tn()+'</div><div class="msg-ava"><svg viewBox="0 0 38 38"><circle cx="19" cy="19" r="17" fill="#d6eeff"/><circle cx="13" cy="17" r="4" fill="#7ec8f8"/><circle cx="25" cy="17" r="4" fill="#7ec8f8"/><ellipse cx="19" cy="24" rx="5.5" ry="3.5" fill="#7ec8f8"/></svg></div><div class="bubble user">'+esc(text)+'</div>';
+  m.appendChild(ud);inp.value='';
+  var ty=document.getElementById('typing');ty.style.display='block';m.scrollTop=m.scrollHeight;
+  var rep=replies[2];
+  for(var i=0;i<replies.length-1;i++){if(replies[i].q&&text.indexOf(replies[i].q)>=0){rep=replies[i];break;}}
+  setTimeout(function(){
+    ty.style.display='none';
+    var ad=document.createElement('div');ad.className='msg';
+    var sb='';
+    rep.src.forEach(function(s){var cls='src-badge'+(s.t==='old'?' old':s.t==='none'?' none':'');sb+='<span class="'+cls+'">'+s.l+'</span>';});
+    ad.innerHTML='<div class="msg-ava"><svg viewBox="0 0 38 38"><circle cx="19" cy="19" r="17" fill="#e4faf2"/><circle cx="13" cy="17" r="4" fill="#52c4a0"/><circle cx="25" cy="17" r="4" fill="#52c4a0"/><ellipse cx="19" cy="24" rx="5.5" ry="3.5" fill="#52c4a0"/><circle cx="12" cy="8" r="4.5" fill="#e4faf2" stroke="#52c4a0" stroke-width="2"/><circle cx="26" cy="8" r="4.5" fill="#e4faf2" stroke="#52c4a0" stroke-width="2"/></svg></div><div class="bubble ai">'+esc(rep.a).replace(/\n/g,'<br>')+'<br><br>'+sb+'</div><div class="msg-time">'+tn()+'</div>';
+    m.appendChild(ad);m.scrollTop=m.scrollHeight;
+  },1500);
+}
+
+function delPdf(b){b.closest('.pdf-card').remove();}
+function onDragOver(e){e.preventDefault();e.stopPropagation();document.getElementById('drop-zone').classList.add('over');}
+function onDragLeave(e){e.preventDefault();document.getElementById('drop-zone').classList.remove('over');}
+function onDrop(e){e.preventDefault();e.stopPropagation();document.getElementById('drop-zone').classList.remove('over');handleFiles(e.dataTransfer.files);}
+function handleFiles(files){
+  if(!files||!files.length)return;
+  var list=document.getElementById('pdf-list'),cnt=0;
+  for(var i=0;i<files.length;i++){
+    var f=files[i];if(!f.name.endsWith('.pdf'))continue;
+    var c=document.createElement('div');c.className='pdf-card';
+    c.innerHTML='<svg width="38" height="38" viewBox="0 0 38 38" style="flex-shrink:0"><rect x="4" y="2" width="22" height="30" rx="4" fill="#e4faf2" stroke="#52c4a0" stroke-width="2"/><rect x="8" y="8" width="14" height="2.5" rx="1.25" fill="#52c4a0"/><rect x="8" y="13" width="14" height="2.5" rx="1.25" fill="#52c4a0"/><rect x="8" y="18" width="10" height="2.5" rx="1.25" fill="#52c4a0"/><rect x="18" y="22" width="16" height="14" rx="4" fill="#b8f0d8" stroke="#52c4a0" stroke-width="1.5"/><text x="26" y="33" font-size="9" text-anchor="middle" fill="#1a6b52" font-weight="bold">NEW</text></svg><div class="pdf-info"><div class="pdf-name">'+esc(f.name)+'</div><div class="pdf-meta">登録日：今日　<span class="ver-tag ver-new">最新版</span></div></div><button class="btn-del" onclick="delPdf(this)">🗑️ 削除</button>';
+    list.appendChild(c);cnt++;
+  }
+  if(cnt>0)showToast('pdf','✅ '+cnt+'件アップロードしました！');
+  document.getElementById('file-in').value='';
+}
+function showToast(id,msg){var e=document.getElementById('toast-'+id);e.textContent=msg;e.classList.add('show');setTimeout(function(){e.classList.remove('show');},2500);}
+</script>
+</body>
+</html>
